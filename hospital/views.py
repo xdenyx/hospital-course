@@ -1,35 +1,46 @@
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
 
-from .forms import LoginForm 
+# Если у тебя в этом файле находятся ViewSet-ы (PatientViewSet и т.д.), 
+# оставь их здесь, они никуда не деваются.
 
-def login_view(request):
-    if request.user.is_authenticated:
-        return redirect('index')
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_login(request):
+    """
+    Принимает логин и пароль в формате JSON, 
+    проверяет их и возвращает токен авторизации.
+    """
+    username = request.data.get('username')
+    password = request.data.get('password')
+    user = authenticate(username=username, password=password)
     
-    if request.method == 'POST':
-        form = LoginForm(request.POST)
-        if form.is_valid():
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password']
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                return redirect('index')
-            else:
-                messages.error(request, "Неправильне ім'я користувача або пароль")
-    else:
-        form = LoginForm()
-    
-    return render(request, 'spa/login.html', {'form': form})
+    if user is not None:
+        # Создаем или получаем существующий токен для пользователя
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({
+            'token': token.key,
+            'is_admin': user.is_staff or user.is_superuser
+        }, status=status.HTTP_200_OK)
+        
+    return Response(
+        {'error': "Неправильне ім'я користувача або пароль"}, 
+        status=status.HTTP_400_BAD_REQUEST
+    )
 
-def logout_view(request):
-    logout(request)
-    return redirect('login')
-
-
-@login_required
-def index_view(request):
-    return render(request, 'spa/index.html')
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_logout(request):
+    """
+    Удаляет токен пользователя на стороне сервера,
+    делая его недействительным.
+    """
+    try:
+        request.user.auth_token.delete()
+        return Response({'success': 'Успішно вийшли з системи'}, status=status.HTTP_200_OK)
+    except Exception:
+        return Response(status=status.HTTP_400_BAD_REQUEST)

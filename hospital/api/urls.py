@@ -4,7 +4,7 @@ from .views import (
     PatientViewSet, RequestViewSet, AppointmentViewSet, DoctorViewSet,
     WorkCategoryViewSet, MaterialCategoryViewSet, MedicineCategoryViewSet,
     ProcedureCategoryViewSet, AppointmentWorkViewSet, WorkMaterialViewSet,
-    WorkMedicineViewSet, WorkProcedureViewSet,
+    WorkMedicineViewSet, WorkProcedureViewSet, api_login,
 )
 
 router = DefaultRouter()
@@ -23,5 +23,6 @@ router.register(r'work-medicines', WorkMedicineViewSet, basename='work-medicine'
 router.register(r'work-procedures', WorkProcedureViewSet, basename='work-procedure')
 
 urlpatterns = [
+    path('login/', api_login, name='api-login'),
     path('', include(router.urls)),
 ]

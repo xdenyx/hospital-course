@@ -5,3 +5,4 @@ djangorestframework==3.16.1
 drf-spectacular==0.29.0
 gunicorn 
 whitenoise
+django-cors-headers
