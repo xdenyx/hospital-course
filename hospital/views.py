@@ -5,9 +5,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 
-# Если у тебя в этом файле находятся ViewSet-ы (PatientViewSet и т.д.), 
-# оставь их здесь, они никуда не деваются.
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def api_login(request):
@@ -35,10 +32,7 @@ def api_login(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def api_logout(request):
-    """
-    Удаляет токен пользователя на стороне сервера,
-    делая его недействительным.
-    """
+    # Удаляет токен пользователя на стороне сервера
     try:
         request.user.auth_token.delete()
         return Response({'success': 'Успішно вийшли з системи'}, status=status.HTTP_200_OK)
