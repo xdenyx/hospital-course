@@ -36,7 +36,8 @@ class RequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Request
         fields = ['id', 'patient', 'patient_id', 'datetime', 'doctor', 'doctor_id']
-    
+                    
+    # validated_data - це вже перевірений Python-словник, який утворився з JSON тексту
     def create(self, validated_data):
         patient_id = validated_data.pop('patient_id')
         doctor_id = validated_data.pop('doctor_id')

@@ -33,8 +33,9 @@ class PatientViewSet(viewsets.ModelViewSet):
     - PUT /api/patients/{id}/ - оновити пацієнта
     - DELETE /api/patients/{id}/ - видалити пацієнта
     - GET /api/patients/by-work/?work_id={id}&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD - вибірка пацієнтів по роботам за період
+    - GET /api/patients/{id}/protocol/ - протокол весь за паціентом
     """
-    queryset = Patient.objects.all()
+    queryset = Patient.objects.all() # записи з таблиці Patient
     serializer_class = PatientSerializer
     permission_classes = [IsAuthenticated]
     
@@ -52,13 +53,12 @@ class PatientViewSet(viewsets.ModelViewSet):
         
         # Фільтрувати за датою
         if start_date and end_date:
-            # Використовуємо __date для безпечного порівняння без конфліктів часових поясів
             appointment_works = appointment_works.filter(
                 appointment__request__datetime__date__gte=start_date,
                 appointment__request__datetime__date__lte=end_date
             )
         
-        # Отримуємо ID пацієнтів через прямий ланцюжок зв'язків (набагато надійніше)
+        # Отримуємо ID пацієнтів через прямий ланцюжок зв'язків
         patient_ids = appointment_works.values_list('appointment__request__patient_id', flat=True)
         
         # Отримуємо унікальних пацієнтів за знайденими ID
@@ -69,16 +69,15 @@ class PatientViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='protocol')
     def protocol(self, request, pk=None):
-        """
-        Возвращает детальный медицинский протокол по выбранному пациенту:
-        все приемы, даты, ответственные врачи, списки работ, расходов и прибыли.
-        """
+
+        # Возвращает детальный медицинский протокол по выбранному пациенту:
+        # все приемы, даты, ответственные врачи, списки работ, расходов и прибыли.
+ 
         patient = self.get_object()
         # Находим все приемы, связанные с заявками этого пациента
         appointments = Appointment.objects.filter(request__patient=patient).order_by('-request__datetime')
         
-        # Используем AppointmentDetailSerializer, так как в нем уже настроена 
-        # глубокая вложенность (works -> materials, medicines, procedures)
+        # Используем AppointmentDetailSerializer (works -> materials, medicines, procedures)
         from .serializers import AppointmentDetailSerializer
         serializer = AppointmentDetailSerializer(appointments, many=True)
         return Response(serializer.data)
