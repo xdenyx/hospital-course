@@ -123,8 +123,6 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         return AppointmentSerializer
 
     def create(self, request, *args, **kwargs):
-        # Normalize incoming payload: prefer `request_id` and remove `request` to avoid
-        # PrimaryKeyRelatedField validation errors when a numeric 0 or invalid PK is present.
         import logging
         logger = logging.getLogger(__name__)
         try:
@@ -132,19 +130,16 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         except Exception:
             data = dict(request.data)
 
-        # Also print to stdout for dev debugging
         try:
             print("AppointmentViewSet.create raw payload:", request.data)
         except Exception:
             pass
         logger.error(f"AppointmentViewSet.create raw payload: {request.data}")
 
-        # If client sent 'request', move it to 'request_id'
         if 'request' in data and 'request_id' not in data:
             data['request_id'] = data.get('request')
             data.pop('request', None)
 
-        # Manually create Appointment to avoid ModelSerializer requiring 'request' before we map 'request_id'.
         request_id_val = data.get('request_id')
         if not request_id_val:
             return Response({'request_id': 'This field is required.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -154,14 +149,13 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         except Request.DoesNotExist:
             return Response({'request_id': 'Request not found.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check OneToOne constraint: a Request can have only one Appointment
+        # Прийом тількі по 1 заявці (один до одного)
         if Appointment.objects.filter(request=req_obj).exists():
             return Response({'request': 'This request already has an appointment.'}, status=status.HTTP_400_BAD_REQUEST)
 
         notes_val = data.get('notes', '')
         appointment = Appointment.objects.create(request=req_obj, notes=notes_val)
 
-        # Serialize created object with detail serializer
         out_serializer = AppointmentDetailSerializer(appointment, context={'request': request})
         headers = self.get_success_headers(out_serializer.data)
         return Response(out_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
