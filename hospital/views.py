@@ -26,12 +26,10 @@ def login_view(request):
     return render(request, 'spa/login.html', {'form': form})
 
 def logout_view(request):
-    """Вихід з системи"""
     logout(request)
     return redirect('login')
 
 
 @login_required
 def index_view(request):
-    """Головна сторінка системи (віддає SPA)"""
     return render(request, 'spa/index.html')

@@ -260,7 +260,7 @@ const PatientsModule = {
                     <div class="card card-body bg-primary text-white mb-4 shadow border-0">
                         <div class="row align-items-center">
                             <div class="col-md-7">
-                                <h1 class="display-6 fw-bold mb-1">${patient.full_name}</h1>
+                                <h1 class="display-6 mb-1 text-white">${patient.full_name}</h1>
                                 <p class="lead mb-0 opacity-75">ID картки: ${patient.id}</p>
                             </div>
                             <div class="col-md-5 text-md-end mt-3 mt-md-0">

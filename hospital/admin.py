@@ -96,33 +96,4 @@ class AppointmentAdmin(admin.ModelAdmin):
     def get_datetime(self, obj):
         return obj.request.datetime
     get_datetime.short_description = 'Дата та час'
-
-
-@admin.register(AppointmentWork)
-class AppointmentWorkAdmin(admin.ModelAdmin):
-    list_display = ['id', 'appointment', 'work_category', 'price', 'cost', 'profit']
-    search_fields = ['appointment__request__patient__full_name']
-    list_filter = ['work_category']
-    inlines = [WorkMaterialInline, WorkMedicineInline, WorkProcedureInline]
-
-
-@admin.register(WorkMaterial)
-class WorkMaterialAdmin(admin.ModelAdmin):
-    list_display = ['id', 'appointment_work', 'category', 'quantity', 'cost']
-    search_fields = ['category__name']
-    list_filter = ['category']
-    formfield_overrides = DECIMAL_OVERRIDES
-
-@admin.register(WorkMedicine)
-class WorkMedicineAdmin(admin.ModelAdmin):
-    list_display = ['id', 'appointment_work', 'category', 'quantity', 'cost']
-    search_fields = ['category__name']
-    list_filter = ['category']
-    formfield_overrides = DECIMAL_OVERRIDES
-
-@admin.register(WorkProcedure)
-class WorkProcedureAdmin(admin.ModelAdmin):
-    list_display = ['id', 'appointment_work', 'category', 'cost']
-    search_fields = ['category__name']
-    list_filter = ['category']
-    formfield_overrides = DECIMAL_OVERRIDES
+    

@@ -111,7 +111,7 @@ class AppointmentWork(models.Model):
     
     def get_total_expenses(self):
         from decimal import Decimal
-        # Витрати - це ВИКЛЮЧНО сума матеріалів, ліків та процедур!
+        # Витрати - сума матеріалів, ліків та процедур!
         materials_cost = self.materials.aggregate(total=models.Sum('cost'))['total'] or Decimal('0.00')
         medicines_cost = self.medicines.aggregate(total=models.Sum('cost'))['total'] or Decimal('0.00')
         procedures_cost = self.procedures.aggregate(total=models.Sum('cost'))['total'] or Decimal('0.00')
