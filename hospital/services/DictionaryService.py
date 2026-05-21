@@ -1,7 +1,7 @@
 from hospital.repositories import DictionaryRepository
 
 class DictionaryService:
-    """BLL для управління довідниками (класифікаціями)"""
+    """BLL для управління довідниками"""
 
     def __init__(self):
         self.dict_repo = DictionaryRepository()

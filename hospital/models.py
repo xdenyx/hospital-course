@@ -1,5 +1,6 @@
 # Create your models here.
 from django.db import models
+from django.utils import timezone
 
 class ProcedureCategory(models.Model):
     name = models.CharField(max_length=100, verbose_name="Клас процедури")
@@ -68,6 +69,15 @@ class Patient(models.Model):
     
     def __str__(self):
         return self.full_name
+    
+    @property
+    def age(self):
+        if not self.date_of_birth:
+            return None
+        today = timezone.now().date()
+        return today.year - self.date_of_birth.year - (
+            (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day)
+        )
     
     class Meta:
         verbose_name = "Пацієнт"

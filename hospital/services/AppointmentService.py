@@ -7,14 +7,6 @@ class AppointmentService:
         self.request_repo = RequestRepository()
         self.appointment_repo = AppointmentRepository()
 
-    def register_new_request(self, datetime, patient_id, doctor_id=None):
-        """Сформувати заявку на прийом"""
-        return self.request_repo.create(datetime, patient_id, doctor_id)
-
-    def get_request(self, request_id):
-        """Отримати заявку за ID"""
-        return self.request_repo.get_by_id(request_id)
-
     def process_appointment(self, request_id, notes, works_data):
         """Обробити прийом та заповнити дані про роботи, матеріали, ліки, процедури"""
         # 1. Створюємо прийом
@@ -57,24 +49,42 @@ class AppointmentService:
 
         return appointment
 
-    def recalculate_work_finances(self, appointment_work_id):
-        """АВТОМАТИЧЕСКИЙ РАСЧЕТ: Пересчитывает витрати та прибуток для конкретної роботи"""
-        from hospital.models import AppointmentWork
-        
-        # Получаем работу со всеми вложенными материалами
-        work = AppointmentWork.objects.get(id=appointment_work_id)
-    
-        # 1. Рахуємо витрати (матеріали + ліки + процедури + власна собівартість роботи)
-        total_expenses = work.get_total_expenses()
-        
-        # 2. Дохід беремо безпосередньо з прайсу категорії роботи
-        income = work.work_category.price
-        
-        # 3. Фіксуємо фінансовий зріз на момент прийому в транзакційну таблицю
-        work.price = income
-        work.cost = total_expenses
-        work.profit = income - total_expenses
-        work.save()
+    @staticmethod
+    def recalculate_work_finances(appointment_work):
+        # автоматично витягує базову вартість з cost_price
+        # 1. Рахуємо та оновлюємо кожен витрачений матеріал
+        materials_cost = 0
+        for m in appointment_work.materials.all():
+            if m.category:
+                base_cost = getattr(m.category, 'cost_price', 0)
+                m.cost = base_cost * (m.quantity or 1)
+                m.save()
+                materials_cost += m.cost
+
+        # 2. Рахуємо та оновлюємо кожні ліки
+        medicines_cost = 0
+        for med in appointment_work.medicines.all():
+            if med.category:
+                base_cost = getattr(med.category, 'cost_price', 0)
+                med.cost = base_cost * (med.quantity or 1)
+                med.save()
+                medicines_cost += med.cost
+
+        # 3. Рахуємо супутні процедури
+        procedures_cost = 0
+        for p in appointment_work.procedures.all():
+            if p.category:
+                base_cost = getattr(p.category, 'cost_price', 0)
+                p.cost = base_cost
+                p.save()
+                procedures_cost += p.cost
+
+        # 4. Оновлюємо фінанси самої роботи (AppointmentWork)
+        appointment_work.cost = materials_cost + medicines_cost + procedures_cost
+        appointment_work.profit = (appointment_work.price or 0) - appointment_work.cost
+        appointment_work.save()
+
+        return appointment_work
 
     def get_appointment(self, appointment_id):
         """Отримати прийом за ID"""

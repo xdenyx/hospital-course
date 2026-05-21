@@ -4,7 +4,7 @@ from ..models import (
     MedicineCategory, ProcedureCategory, AppointmentWork, WorkMaterial,
     WorkMedicine, WorkProcedure
 )
-
+from hospital.services import AppointmentService
 
 class DoctorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -13,18 +13,11 @@ class DoctorSerializer(serializers.ModelSerializer):
 
 
 class PatientSerializer(serializers.ModelSerializer):
-    age = serializers.SerializerMethodField()
+    age = serializers.ReadOnlyField()
     
     class Meta:
         model = Patient
         fields = ['id', 'full_name', 'date_of_birth', 'age']
-    
-    def get_age(self, obj):
-        from django.utils import timezone
-        today = timezone.now().date()
-        return today.year - obj.date_of_birth.year - (
-            (today.month, today.day) < (obj.date_of_birth.month, obj.date_of_birth.day)
-        )
 
 
 class RequestSerializer(serializers.ModelSerializer):
@@ -79,26 +72,16 @@ class WorkMaterialSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = WorkMaterial
-        fields = ['id', 'appointment_work', 'category', 'category_name', 'quantity', 'cost']
+        fields = '__all__'
 
     def create(self, validated_data):
-        category = validated_data['category']
-        quantity = validated_data.get('quantity', 1)
-        
-        # Находим базовую цену материала в справочнике и умножаем на количество
-        category_cost = _find_price_value(category)
-        validated_data['cost'] = category_cost * int(quantity)
-        
-        instance = super().create(validated_data)
-        
-        # Обновляем финансовые метрики в родительской работе
-        appt_work = instance.appointment_work
-        appt_work.cost = float(appt_work.cost or 0) + float(instance.cost)
-        appt_work.profit = float(appt_work.price or 0) - float(appt_work.cost)
-        appt_work.save()
-        
-        return instance
+        validated_data['cost'] = 0
+        material = super().create(validated_data)
 
+        AppointmentService.recalculate_work_finances(material.appointment_work)
+        
+        material.refresh_from_db()
+        return material
 
 class WorkMedicineSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
@@ -106,23 +89,16 @@ class WorkMedicineSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = WorkMedicine
-        fields = ['id', 'appointment_work', 'category', 'category_name', 'quantity', 'cost']
+        fields = '__all__'
 
     def create(self, validated_data):
-        category = validated_data['category']
-        quantity = validated_data.get('quantity', 1)
+        validated_data['cost'] = 0
+        medicine = super().create(validated_data)
         
-        category_cost = _find_price_value(category)
-        validated_data['cost'] = category_cost * int(quantity)
+        AppointmentService.recalculate_work_finances(medicine.appointment_work)
         
-        instance = super().create(validated_data)
-        
-        appt_work = instance.appointment_work
-        appt_work.cost = float(appt_work.cost or 0) + float(instance.cost)
-        appt_work.profit = float(appt_work.price or 0) - float(appt_work.cost)
-        appt_work.save()
-        
-        return instance
+        medicine.refresh_from_db()
+        return medicine
 
 
 class WorkProcedureSerializer(serializers.ModelSerializer):
@@ -131,22 +107,16 @@ class WorkProcedureSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = WorkProcedure
-        fields = ['id', 'appointment_work', 'category', 'category_name', 'cost']
+        fields = '__all__'
 
     def create(self, validated_data):
-        category = validated_data['category']
+        validated_data['cost'] = 0
+        procedure = super().create(validated_data)
         
-        category_cost = _find_price_value(category)
-        validated_data['cost'] = category_cost
+        AppointmentService.recalculate_work_finances(procedure.appointment_work)
         
-        instance = super().create(validated_data)
-        
-        appt_work = instance.appointment_work
-        appt_work.cost = float(appt_work.cost or 0) + float(instance.cost)
-        appt_work.profit = float(appt_work.price or 0) - float(appt_work.cost)
-        appt_work.save()
-        
-        return instance
+        procedure.refresh_from_db()
+        return procedure
 
 
 class AppointmentWorkSerializer(serializers.ModelSerializer):
@@ -168,7 +138,7 @@ class AppointmentWorkSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         work_category = validated_data['work_category']
         
-        # Автоматически вытягиваем стоимость
+        # Автоматически вытягиваем дефолтную стоимость
         if 'price' not in validated_data or validated_data['price'] is None:
             validated_data['price'] = _find_price_value(work_category)
         

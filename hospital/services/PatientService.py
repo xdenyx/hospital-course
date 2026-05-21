@@ -17,11 +17,3 @@ class PatientService:
     def get_all_patients(self):
         """Отримати всіх пацієнтів"""
         return self.patient_repo.get_all()
-
-    def update_patient(self, patient_id, **kwargs):
-        """Оновити дані пацієнта"""
-        return self.patient_repo.update(patient_id, **kwargs)
-
-    def delete_patient(self, patient_id):
-        """Видалити пацієнта"""
-        return self.patient_repo.delete(patient_id)
