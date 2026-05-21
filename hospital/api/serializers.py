@@ -4,7 +4,6 @@ from ..models import (
     MedicineCategory, ProcedureCategory, AppointmentWork, WorkMaterial,
     WorkMedicine, WorkProcedure
 )
-from hospital.services import AppointmentService
 
 class DoctorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,25 +21,13 @@ class PatientSerializer(serializers.ModelSerializer):
 
 class RequestSerializer(serializers.ModelSerializer):
     patient = PatientSerializer(read_only=True)
-    patient_id = serializers.IntegerField(write_only=True)
+    patient_id = serializers.PrimaryKeyRelatedField(source='patient', queryset=Patient.objects.all(), write_only=True)
     doctor = DoctorSerializer(read_only=True)
-    doctor_id = serializers.IntegerField(write_only=True)
+    doctor_id = serializers.PrimaryKeyRelatedField(source='doctor', queryset=Doctor.objects.all(), write_only=True)
 
     class Meta:
         model = Request
         fields = ['id', 'patient', 'patient_id', 'datetime', 'doctor', 'doctor_id']
-                    
-    # validated_data - це вже перевірений Python-словник, який утворився з JSON тексту
-    def create(self, validated_data):
-        patient_id = validated_data.pop('patient_id')
-        doctor_id = validated_data.pop('doctor_id')
-        
-        patient = Patient.objects.get(id=patient_id)
-        doctor = Doctor.objects.get(id=doctor_id)
-        
-        # створюємо заявку з лікарем та пацієнтом
-        request = Request.objects.create(patient=patient, doctor=doctor, **validated_data)
-        return request
 
 class WorkCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -74,15 +61,6 @@ class WorkMaterialSerializer(serializers.ModelSerializer):
         model = WorkMaterial
         fields = '__all__'
 
-    def create(self, validated_data):
-        validated_data['cost'] = 0
-        material = super().create(validated_data)
-
-        AppointmentService.recalculate_work_finances(material.appointment_work)
-        
-        material.refresh_from_db()
-        return material
-
 class WorkMedicineSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     cost = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
@@ -90,15 +68,6 @@ class WorkMedicineSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkMedicine
         fields = '__all__'
-
-    def create(self, validated_data):
-        validated_data['cost'] = 0
-        medicine = super().create(validated_data)
-        
-        AppointmentService.recalculate_work_finances(medicine.appointment_work)
-        
-        medicine.refresh_from_db()
-        return medicine
 
 
 class WorkProcedureSerializer(serializers.ModelSerializer):
@@ -108,15 +77,6 @@ class WorkProcedureSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkProcedure
         fields = '__all__'
-
-    def create(self, validated_data):
-        validated_data['cost'] = 0
-        procedure = super().create(validated_data)
-        
-        AppointmentService.recalculate_work_finances(procedure.appointment_work)
-        
-        procedure.refresh_from_db()
-        return procedure
 
 
 class AppointmentWorkSerializer(serializers.ModelSerializer):
@@ -135,18 +95,6 @@ class AppointmentWorkSerializer(serializers.ModelSerializer):
             'id', 'appointment', 'work_category', 'category_name', 'price', 'cost', 'profit', 'materials', 'medicines', 'procedures'
         ]
 
-    def create(self, validated_data):
-        work_category = validated_data['work_category']
-        
-        # Автоматически вытягиваем дефолтную стоимость
-        if 'price' not in validated_data or validated_data['price'] is None:
-            validated_data['price'] = _find_price_value(work_category)
-        
-        validated_data['cost'] = 0
-        validated_data['profit'] = validated_data['price']
-        
-        return super().create(validated_data)
-
 
 class AppointmentDetailSerializer(serializers.ModelSerializer):
     request = RequestSerializer(read_only=True)
@@ -159,40 +107,8 @@ class AppointmentDetailSerializer(serializers.ModelSerializer):
 
 class AppointmentSerializer(serializers.ModelSerializer):
     request = RequestSerializer(read_only=True)
-    request_id = serializers.IntegerField(write_only=True)
+    request_id = serializers.PrimaryKeyRelatedField(source='request', queryset=Request.objects.all(), write_only=True)
     
     class Meta:
         model = Appointment
         fields = ['id', 'request', 'request_id', 'notes']
-    
-    def create(self, validated_data):
-        request_id = validated_data.pop('request_id')
-        try:
-            request = Request.objects.get(id=request_id)
-            validated_data['request'] = request
-        except Request.DoesNotExist:
-            raise serializers.ValidationError({'request_id': 'Request не знайден'})
-        return super().create(validated_data)
-    
-    def update(self, instance, validated_data):
-        request_id = validated_data.pop('request_id', None)
-        if request_id:
-            try:
-                request = Request.objects.get(id=request_id)
-                validated_data['request'] = request
-            except Request.DoesNotExist:
-                raise serializers.ValidationError({'request_id': 'Request не знайден'})
-        return super().update(instance, validated_data)
-
-def _find_price_value(obj):
-    if not obj:
-        return 0.0
-    from django.db.models import DecimalField, FloatField, IntegerField
-    for field in obj._meta.fields:
-        if field.name == 'id':
-            continue
-        if isinstance(field, (DecimalField, FloatField, IntegerField)):
-            val = getattr(obj, field.name)
-            if val is not None:
-                return float(val)
-    return 0.0

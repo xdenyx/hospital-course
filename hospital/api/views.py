@@ -273,20 +273,78 @@ class AppointmentWorkViewSet(viewsets.ModelViewSet):
     serializer_class = AppointmentWorkSerializer
     permission_classes = [IsAuthenticated]
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.appointment_service = AppointmentService()
+
+    def perform_create(self, serializer):
+        work = self.appointment_service.create_appointment_work(serializer.validated_data)
+        serializer.instance = work
+
+    def perform_update(self, serializer):
+        work = self.appointment_service.update_appointment_work(serializer.instance, serializer.validated_data)
+        serializer.instance = work
+
 class WorkMaterialViewSet(viewsets.ModelViewSet):
     queryset = WorkMaterial.objects.all()
     serializer_class = WorkMaterialSerializer
     permission_classes = [IsAuthenticated]
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.appointment_service = AppointmentService()
+
+    def perform_create(self, serializer):
+        material = self.appointment_service.create_work_material(serializer.validated_data)
+        serializer.instance = material
+
+    def perform_update(self, serializer):
+        material = self.appointment_service.update_work_material(serializer.instance, serializer.validated_data)
+        serializer.instance = material
+
+    def perform_destroy(self, instance):
+        self.appointment_service.delete_work_material(instance)
 
 class WorkMedicineViewSet(viewsets.ModelViewSet):
     queryset = WorkMedicine.objects.all()
     serializer_class = WorkMedicineSerializer
     permission_classes = [IsAuthenticated]
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.appointment_service = AppointmentService()
+
+    def perform_create(self, serializer):
+        medicine = self.appointment_service.create_work_medicine(serializer.validated_data)
+        serializer.instance = medicine
+
+    def perform_update(self, serializer):
+        medicine = self.appointment_service.update_work_medicine(serializer.instance, serializer.validated_data)
+        serializer.instance = medicine
+
+    def perform_destroy(self, instance):
+        self.appointment_service.delete_work_medicine(instance)
+
 class WorkProcedureViewSet(viewsets.ModelViewSet):
     queryset = WorkProcedure.objects.all()
     serializer_class = WorkProcedureSerializer
     permission_classes = [IsAuthenticated]
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.appointment_service = AppointmentService()
+
+    def perform_create(self, serializer):
+        procedure = self.appointment_service.create_work_procedure(serializer.validated_data)
+        serializer.instance = procedure
+
+    def perform_update(self, serializer):
+        procedure = self.appointment_service.update_work_procedure(serializer.instance, serializer.validated_data)
+        serializer.instance = procedure
+
+    def perform_destroy(self, instance):
+        self.appointment_service.delete_work_procedure(instance)
+
 
 class ReportViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
@@ -297,13 +355,19 @@ class ReportViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'], url_path='work-financials')
     def work_financials(self, request):
-        data = self.report_service.get_work_category_financials()
-        return Response(data)
-
-    @action(detail=True, methods=['get'], url_path='patient-protocol')
-    def patient_protocol(self, request, pk=None):
-        data = self.report_service.generate_patient_protocol(int(pk))
-        return Response(data)
+        queryset = self.report_service.get_work_category_financials()
+        data = list(queryset.values(
+            'id',
+            'name',
+            'total_income',
+            'work_cost',
+            'materials_cost',
+            'medicines_cost',
+            'procedures_cost',
+            'total_expenses',
+            'net_profit',
+        ))
+        return Response(data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])

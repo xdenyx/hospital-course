@@ -1,12 +1,9 @@
-from ..repositories import (
-    PatientRepository, DictionaryRepository
-)
+from ..repositories import PatientRepository
 
 class ClinicService:
 
     def __init__(self):
         self.patient_repo = PatientRepository()
-        self.dict_repo = DictionaryRepository()
 
     def get_patients_by_work_and_date(self, start_date: str, end_date: str, work_category_id: int):
         """Вибірка: Список пацієнтів, за якими виконувалися роботи за період"""

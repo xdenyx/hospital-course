@@ -4,7 +4,7 @@ from .views import (
     PatientViewSet, RequestViewSet, AppointmentViewSet, DoctorViewSet,
     WorkCategoryViewSet, MaterialCategoryViewSet, MedicineCategoryViewSet,
     ProcedureCategoryViewSet, AppointmentWorkViewSet, WorkMaterialViewSet,
-    WorkMedicineViewSet, WorkProcedureViewSet, api_login,
+    WorkMedicineViewSet, WorkProcedureViewSet, ReportViewSet, api_login,
 )
 
 router = DefaultRouter()
@@ -17,6 +17,7 @@ router.register(r'material-categories', MaterialCategoryViewSet, basename='mater
 router.register(r'medicine-categories', MedicineCategoryViewSet, basename='medicine-category')
 router.register(r'procedure-categories', ProcedureCategoryViewSet, basename='procedure-category')
 router.register(r'appointment-works', AppointmentWorkViewSet, basename='appointment-work')
+router.register(r'reports', ReportViewSet, basename='report')
 
 router.register(r'work-materials', WorkMaterialViewSet, basename='work-material')
 router.register(r'work-medicines', WorkMedicineViewSet, basename='work-medicine')

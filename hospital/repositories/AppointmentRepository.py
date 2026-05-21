@@ -37,13 +37,16 @@ class AppointmentRepository:
         return appointment
 
     @staticmethod
-    def add_work(appointment_id, work_category_id, cost, profit):
-        return AppointmentWork.objects.create(
-            appointment_id=appointment_id,
-            work_category_id=work_category_id,
-            cost=cost,
-            profit=profit
-        )
+    def add_work(appointment_id, work_category_id, price=None, cost=0, profit=0):
+        payload = {
+            'appointment_id': appointment_id,
+            'work_category_id': work_category_id,
+            'cost': cost,
+            'profit': profit,
+        }
+        if price is not None:
+            payload['price'] = price
+        return AppointmentWork.objects.create(**payload)
 
     @staticmethod
     def add_material(appointment_work_id, material_category_id, quantity, cost):
