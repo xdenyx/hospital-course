@@ -197,7 +197,6 @@ class WorkCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     
     Доступні операції:
     - GET /api/work-categories/ - список категорій робіт
-    - POST /api/work-categories/ - створити категорію роботи
     """
     serializer_class = WorkCategorySerializer
     permission_classes = [IsAuthenticated]
@@ -216,7 +215,6 @@ class MaterialCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     
     Доступні операції:
     - GET /api/material-categories/ - список категорій матеріалів
-    - POST /api/material-categories/ - створити категорію матеріалу
     """
     serializer_class = MaterialCategorySerializer
     permission_classes = [IsAuthenticated]
@@ -235,7 +233,6 @@ class MedicineCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     
     Доступні операції:
     - GET /api/medicine-categories/ - список категорій ліків
-    - POST /api/medicine-categories/ - створити категорію ліку
     """
     serializer_class = MedicineCategorySerializer
     permission_classes = [IsAuthenticated]
@@ -254,7 +251,6 @@ class ProcedureCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     
     Доступні операції:
     - GET /api/procedure-categories/ - список категорій процедур
-    - POST /api/procedure-categories/ - створити категорію процедури
     """
     serializer_class = ProcedureCategorySerializer
     permission_classes = [IsAuthenticated]
