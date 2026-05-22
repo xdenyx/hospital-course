@@ -13,7 +13,7 @@ class ReportService:
         return self.report_repo.get_work_category_financials()
 
     def get_appointment_work_financials(self, appointment_work_id: int):
-        """Wrapper to get financial aggregates for a single AppointmentWork."""
+        """Розрахунок фінансових витрат на прийомі"""
         return self.report_repo.get_appointment_work_financials(appointment_work_id)
 
     def generate_patient_protocol(self, patient_id: int):

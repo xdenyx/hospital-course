@@ -2,39 +2,6 @@ from django.db.models import Sum, F, DecimalField, OuterRef, Subquery
 from django.db.models.functions import Coalesce
 from ..models import WorkCategory
 
-
-class AppointmentWorkFinancialsMixin:
-    @staticmethod
-    def get_appointment_work_financials_by_id(appointment_work_id: int):
-        """Расчет финансов в приеме"""
-        from ..models import AppointmentWork
-
-        qs = (
-            AppointmentWork.objects.filter(id=appointment_work_id)
-            .annotate(
-                materials_cost=Coalesce(Sum('materials__cost'), 0.0, output_field=DecimalField()),
-                medicines_cost=Coalesce(Sum('medicines__cost'), 0.0, output_field=DecimalField()),
-                procedures_cost=Coalesce(Sum('procedures__cost'), 0.0, output_field=DecimalField()),
-            )
-        )
-
-        aw = qs.first()
-        if not aw:
-            return None
-
-        total_expenses = (aw.materials_cost or 0) + (aw.medicines_cost or 0) + (aw.procedures_cost or 0)
-        profit = (aw.price or 0) - total_expenses
-
-        return {
-            'appointment_work_id': appointment_work_id,
-            'price': aw.price,
-            'materials_cost': aw.materials_cost or 0,
-            'medicines_cost': aw.medicines_cost or 0,
-            'procedures_cost': aw.procedures_cost or 0,
-            'total_expenses': total_expenses,
-            'profit': profit,
-        }
-
 class FinancialReportRepository:
     """DAL для отримання фінансових звітів"""
 
@@ -84,5 +51,32 @@ class FinancialReportRepository:
         ).filter(total_income__gt=0)
 
     @staticmethod
-    def get_appointment_work_financials(appointment_work_id: int):
-        return AppointmentWorkFinancialsMixin.get_appointment_work_financials_by_id(appointment_work_id)
+    def get_appointment_work_financials_by_id(appointment_work_id: int):
+        """Расчет финансов в приеме"""
+        from ..models import AppointmentWork
+
+        qs = (
+            AppointmentWork.objects.filter(id=appointment_work_id)
+            .annotate(
+                materials_cost=Coalesce(Sum('materials__cost'), 0.0, output_field=DecimalField()),
+                medicines_cost=Coalesce(Sum('medicines__cost'), 0.0, output_field=DecimalField()),
+                procedures_cost=Coalesce(Sum('procedures__cost'), 0.0, output_field=DecimalField()),
+            )
+        )
+
+        aw = qs.first()
+        if not aw:
+            return None
+
+        total_expenses = (aw.materials_cost or 0) + (aw.medicines_cost or 0) + (aw.procedures_cost or 0)
+        profit = (aw.price or 0) - total_expenses
+
+        return {
+            'appointment_work_id': appointment_work_id,
+            'price': aw.price,
+            'materials_cost': aw.materials_cost or 0,
+            'medicines_cost': aw.medicines_cost or 0,
+            'procedures_cost': aw.procedures_cost or 0,
+            'total_expenses': total_expenses,
+            'profit': profit,
+        }
