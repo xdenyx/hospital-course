@@ -137,22 +137,9 @@ class AppointmentWork(models.Model):
     def __str__(self):
         return f"{self.work_category.name} (Прийом №{self.appointment.id})"
     
-    def get_total_expenses(self):
-        from decimal import Decimal
-        # Витрати - сума матеріалів, ліків та процедур!
-        materials_cost = self.materials.aggregate(total=models.Sum('cost'))['total'] or Decimal('0.00')
-        medicines_cost = self.medicines.aggregate(total=models.Sum('cost'))['total'] or Decimal('0.00')
-        procedures_cost = self.procedures.aggregate(total=models.Sum('cost'))['total'] or Decimal('0.00')
-        
-        return materials_cost + medicines_cost + procedures_cost
-    
     def get_price(self):
         # ціна роботи
         return self.price
-    
-    def get_profit(self):
-        # прибуток (ціна роботи - витрати)
-        return self.price - self.get_total_expenses()
     
     class Meta:
         verbose_name = "Робота в прийомі"
