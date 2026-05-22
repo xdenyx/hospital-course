@@ -1,6 +1,13 @@
 # Create your models here.
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.utils import timezone
+
+
+def validate_birth_date(value):
+    if value > timezone.now().date():
+        raise ValidationError("Дата народження не може бути пізніше поточної дати.")
 
 class ProcedureCategory(models.Model):
     name = models.CharField(max_length=100, verbose_name="Клас процедури")
@@ -64,8 +71,15 @@ class Doctor(models.Model):
 
 
 class Patient(models.Model):
-    full_name = models.CharField(max_length=150, verbose_name="ПІБ Пацієнта")
-    date_of_birth = models.DateField(verbose_name="Дата народження")
+    full_name = models.CharField(
+        max_length=150,
+        verbose_name="ПІБ Пацієнта",
+        validators=[RegexValidator(r'^[^0-9]+$', message="У полі ПІБ не можна вводити цифри.")],
+    )
+    date_of_birth = models.DateField(
+        verbose_name="Дата народження",
+        validators=[validate_birth_date],
+    )
     
     def __str__(self):
         return self.full_name
@@ -78,6 +92,10 @@ class Patient(models.Model):
         return today.year - self.date_of_birth.year - (
             (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day)
         )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
     
     class Meta:
         verbose_name = "Пацієнт"
@@ -146,6 +164,9 @@ class WorkMaterial(models.Model):
     quantity = models.DecimalField(max_digits=8, decimal_places=2, verbose_name="Кількість")
     cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Витрати на матеріал")
     
+    def __str__(self):
+        return f"{self.category.name}"
+    
     class Meta:
         verbose_name = "Матеріал у роботі"
         verbose_name_plural = "Матеріали у роботі"
@@ -156,6 +177,9 @@ class WorkMedicine(models.Model):
     quantity = models.DecimalField(max_digits=8, decimal_places=2, verbose_name="Кількість")
     cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Витрати на ліки")
     
+    def __str__(self):
+        return f"{self.category.name}"
+
     class Meta:
         verbose_name = "Ліки у роботі"
         verbose_name_plural = "Ліки у роботі"
@@ -164,6 +188,9 @@ class WorkProcedure(models.Model):
     appointment_work = models.ForeignKey(AppointmentWork, related_name='procedures', on_delete=models.CASCADE, verbose_name="Робота в прийомі")
     category = models.ForeignKey(ProcedureCategory, on_delete=models.PROTECT, verbose_name="Категорія процедури")
     cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Витрати на процедуру")
+    
+    def __str__(self):
+        return f"{self.category.name}"
     
     class Meta:
         verbose_name = "Процедура у роботі"
