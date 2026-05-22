@@ -25,5 +25,6 @@ router.register(r'work-procedures', WorkProcedureViewSet, basename='work-procedu
 
 urlpatterns = [
     path('login/', api_login, name='api-login'),
+    path('api-auth/', include('rest_framework.urls')),
     path('', include(router.urls)),
 ]

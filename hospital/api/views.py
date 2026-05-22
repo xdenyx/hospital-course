@@ -24,18 +24,7 @@ from hospital.services import (
     )
 
 class PatientViewSet(viewsets.ModelViewSet):
-    """
-    API для управління пацієнтами.
-    
-    Доступні операції:
-    - GET /api/patients/ - список всіх пацієнтів
-    - GET /api/patients/{id}/ - деталі пацієнта
-    - POST /api/patients/ - створити пацієнта
-    - PUT /api/patients/{id}/ - оновити пацієнта
-    - DELETE /api/patients/{id}/ - видалити пацієнта
-    - GET /api/patients/by-work/?work_id={id}&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD - вибірка пацієнтів по роботам за період
-    - GET /api/patients/{id}/protocol/ - протокол весь за паціентом
-    """
+    # API для управління пацієнтами.
     serializer_class = PatientSerializer
     permission_classes = [IsAuthenticated]
 
@@ -53,23 +42,13 @@ class PatientViewSet(viewsets.ModelViewSet):
         work_id = request.query_params.get('work_id')
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')
-        
-        patients = self.clinic_service.get_patients_by_work_and_date(
-            start_date, end_date, work_id
-        )
 
         if not work_id:
             return Response({'error': 'work_id параметр обов\'язковий'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Знайти всі роботи цієї категорії
-        appointment_works = AppointmentWork.objects.filter(work_category_id=work_id)
-        
-        # Фільтрувати за датою
-        if start_date and end_date:
-            appointment_works = appointment_works.filter(
-                appointment__request__datetime__date__gte=start_date,
-                appointment__request__datetime__date__lte=end_date
-            )
+
+        patients = self.clinic_service.get_patients_by_work_and_date(
+            start_date, end_date, work_id
+        )
         
         serializer = self.get_serializer(patients, many=True)
         return Response(serializer.data)
@@ -97,16 +76,7 @@ class PatientViewSet(viewsets.ModelViewSet):
             )
 
 class RequestViewSet(viewsets.ModelViewSet):
-    """
-    API для управління заявками на прийом.
-    
-    Доступні операції:
-    - GET /api/requests/ - список всіх заявок
-    - GET /api/requests/{id}/ - деталі заявки
-    - POST /api/requests/ - створити заявку
-    - PUT /api/requests/{id}/ - оновити заявку
-    - DELETE /api/requests/{id}/ - видалити заявку
-    """
+    # API для управління заявками на прийом.
     serializer_class = RequestSerializer
     permission_classes = [IsAuthenticated]
 
@@ -177,13 +147,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
 
 class DoctorViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API для отримання інформації про лікарів.
-    
-    Доступні операції:
-    - GET /api/doctors/ - список всіх лікарів
-    - GET /api/doctors/{id}/ - деталі лікаря
-    """
+    # API для отримання інформації про лікарів.
     serializer_class = DoctorSerializer
     permission_classes = [IsAuthenticated]
 
@@ -192,12 +156,7 @@ class DoctorViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class WorkCategoryViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API для управління категоріями робіт.
-    
-    Доступні операції:
-    - GET /api/work-categories/ - список категорій робіт
-    """
+    # API для управління категоріями робіт.
     serializer_class = WorkCategorySerializer
     permission_classes = [IsAuthenticated]
 
@@ -210,12 +169,7 @@ class WorkCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class MaterialCategoryViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API для управління категоріями матеріалів.
-    
-    Доступні операції:
-    - GET /api/material-categories/ - список категорій матеріалів
-    """
+    # API для управління категоріями матеріалів.
     serializer_class = MaterialCategorySerializer
     permission_classes = [IsAuthenticated]
 
@@ -228,12 +182,7 @@ class MaterialCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class MedicineCategoryViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API для управління категоріями ліків.
-    
-    Доступні операції:
-    - GET /api/medicine-categories/ - список категорій ліків
-    """
+    # API для управління категоріями ліків.
     serializer_class = MedicineCategorySerializer
     permission_classes = [IsAuthenticated]
 
@@ -246,12 +195,7 @@ class MedicineCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ProcedureCategoryViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API для управління категоріями процедур.
-    
-    Доступні операції:
-    - GET /api/procedure-categories/ - список категорій процедур
-    """
+    # API для управління категоріями процедур.
     serializer_class = ProcedureCategorySerializer
     permission_classes = [IsAuthenticated]
 
@@ -264,11 +208,7 @@ class ProcedureCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class AppointmentWorkViewSet(viewsets.ModelViewSet):
-    """
-    управління роботами
-    - GET /api/appointment-works/ - список робіт
-    - POST /api/appointment-works/ - додати роботу
-    """
+    # управління роботами
     queryset = AppointmentWork.objects.all()
     serializer_class = AppointmentWorkSerializer
     permission_classes = [IsAuthenticated]
