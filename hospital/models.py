@@ -80,7 +80,12 @@ class Patient(models.Model):
         verbose_name="Дата народження",
         validators=[validate_birth_date],
     )
-    
+    phone_number = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name="Номер телефону"
+    )
     def __str__(self):
         return self.full_name
     

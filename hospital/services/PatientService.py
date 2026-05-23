@@ -6,9 +6,9 @@ class PatientService:
     def __init__(self):
         self.patient_repo = PatientRepository()
 
-    def create_patient(self, full_name, date_of_birth):
+    def create_patient(self, full_name, date_of_birth, phone_number=None):
         """Створити нового пацієнта"""
-        return self.patient_repo.create(full_name, date_of_birth)
+        return self.patient_repo.create(full_name, date_of_birth, phone_number)
 
     def get_patient(self, patient_id):
         """Отримати пацієнта за ID"""

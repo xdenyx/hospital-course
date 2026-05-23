@@ -12,10 +12,11 @@ class PatientRepository:
         return Patient.objects.all()
 
     @staticmethod
-    def create(full_name: str, date_of_birth):
+    def create(full_name: str, date_of_birth, phone_number: str = None):
         return Patient.objects.create(
             full_name=full_name,
-            date_of_birth=date_of_birth
+            date_of_birth=date_of_birth,
+            phone_number=phone_number
         )
 
     @staticmethod
