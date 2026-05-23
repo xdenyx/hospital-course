@@ -12,9 +12,9 @@ class ReportService:
         """Отримати фінансові дані за категоріями робіт"""
         return self.report_repo.get_work_category_financials()
 
-    def get_appointment_work_financials(self, appointment_work_id: int):
-        """Розрахунок фінансових витрат на прийомі"""
-        return self.report_repo.get_appointment_work_financials(appointment_work_id)
+    # def get_appointment_work_financials(self, appointment_work_id: int):
+    #     """Розрахунок фінансових витрат на прийомі"""
+    #     return self.report_repo.get_appointment_work_financials(appointment_work_id)
 
     def generate_patient_protocol(self, patient_id: int):
         """Генерувати детальний протокол пацієнта"""
