@@ -46,9 +46,15 @@ class PatientViewSet(viewsets.ModelViewSet):
         if not work_id:
             return Response({'error': 'work_id параметр обов\'язковий'}, status=status.HTTP_400_BAD_REQUEST)
 
-        patients = self.clinic_service.get_patients_by_work_and_date(
-            start_date, end_date, work_id
-        )
+        if not (start_date and end_date):
+            return Response({'error': 'start_date та end_date параметри обов\'язкові'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            patients = self.clinic_service.get_patients_by_work_and_date(
+                start_date, end_date, work_id
+            )
+        except ValueError as exc:
+            return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         
         serializer = self.get_serializer(patients, many=True)
         return Response(serializer.data)

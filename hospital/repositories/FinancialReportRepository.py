@@ -20,7 +20,7 @@ class FinancialReportRepository:
         )
 
         work_cost_subquery = (
-            work_base.annotate(total=Coalesce(Sum('appointmentwork__price'), 0.0, output_field=DecimalField()))
+            work_base.annotate(total=Coalesce(Sum('appointmentwork__cost'), 0.0, output_field=DecimalField()))
             .values('total')[:1]
         )
 
@@ -46,8 +46,8 @@ class FinancialReportRepository:
             medicines_cost=Coalesce(Subquery(medicines_cost_subquery, output_field=DecimalField()), 0.0, output_field=DecimalField()),
             procedures_cost=Coalesce(Subquery(procedures_cost_subquery, output_field=DecimalField()), 0.0, output_field=DecimalField()),
         ).annotate(
-            total_expenses=F('materials_cost') + F('medicines_cost') + F('procedures_cost'),
-            net_profit=F('total_income') - F('total_expenses')
+            total_expenses=F('work_cost'),
+            net_profit=F('total_income') - F('work_cost')
         ).filter(total_income__gt=0)
 
     @staticmethod
@@ -69,6 +69,8 @@ class FinancialReportRepository:
             return None
 
         total_expenses = (aw.materials_cost or 0) + (aw.medicines_cost or 0) + (aw.procedures_cost or 0)
+        if aw.cost is not None:
+            total_expenses = aw.cost
         profit = (aw.price or 0) - total_expenses
 
         return {

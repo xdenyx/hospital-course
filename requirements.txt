@@ -7,3 +7,6 @@ dj-database-url==2.1.0
 gunicorn 
 whitenoise
 django-cors-headers
+pytest
+pytest-django
+pytest-sugar
