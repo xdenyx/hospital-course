@@ -1,6 +1,8 @@
 from ..models import Appointment
+from ..services.interfaces import ProtocolRepositoryProtocol
 
-class ProtocolRepository:
+
+class ProtocolRepository(ProtocolRepositoryProtocol):
     """DAL для роботи з протоколами прийому"""
 
     @staticmethod

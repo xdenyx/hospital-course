@@ -1,11 +1,12 @@
 from django.db import transaction
-from hospital.repositories import AppointmentRepository
+from hospital.services.interfaces import AppointmentRepositoryProtocol
+
 
 class AppointmentService:
     """BLL для управління процесом прийому пацієнта"""
 
-    def __init__(self):
-        self.appointment_repo = AppointmentRepository()
+    def __init__(self, appointment_repo: AppointmentRepositoryProtocol):
+        self.appointment_repo = appointment_repo
 
     def process_appointment(self, request_id, notes, works_data):
         """Обробити прийом та заповнити дані про роботи, матеріали, ліки, процедури"""

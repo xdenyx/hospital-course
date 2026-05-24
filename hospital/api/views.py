@@ -22,6 +22,13 @@ from hospital.services import (
     PatientService, AppointmentService, DictionaryService, 
     ReportService, ClinicService,
     )
+from hospital.repositories import (
+    PatientRepository,
+    AppointmentRepository,
+    DictionaryRepository,
+    FinancialReportRepository,
+    ProtocolRepository,
+)
 
 class PatientViewSet(viewsets.ModelViewSet):
     # API для управління пацієнтами.
@@ -30,8 +37,11 @@ class PatientViewSet(viewsets.ModelViewSet):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.patient_service = PatientService()
-        self.clinic_service = ClinicService()
+        # 1. Створюємо конкретну інфраструктуру (репозиторій)
+        repo = PatientRepository()
+        # 2. Передаємо її в сервіси (впровадження залежності)
+        self.patient_service = PatientService(patient_repo=repo)
+        self.clinic_service = ClinicService(patient_repo=repo)
 
     def get_queryset(self):
         # Запрос делегируется сервису пациентов
@@ -61,7 +71,10 @@ class PatientViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='protocol')
     def get_protocol(self, request, pk=None):
-        report_service = ReportService()
+        report_repo = FinancialReportRepository()
+        patient_repo = PatientRepository()
+        protocol_repo = ProtocolRepository()
+        report_service = ReportService(report_repo=report_repo, patient_repo=patient_repo, protocol_repo=protocol_repo)
         
         try:
             protocol_data = report_service.generate_patient_protocol(patient_id=int(pk))
@@ -96,7 +109,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.appointment_service = AppointmentService()
+        self.appointment_service = AppointmentService(appointment_repo=AppointmentRepository())
 
     def get_queryset(self):
         return Appointment.objects.all()
@@ -168,7 +181,8 @@ class WorkCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.dict_service = DictionaryService()
+        repo = DictionaryRepository()
+        self.dict_service = DictionaryService(dict_repo=repo)
 
     def get_queryset(self):
         return self.dict_service.get_all_work_categories()
@@ -181,7 +195,8 @@ class MaterialCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.dict_service = DictionaryService()
+        repo = DictionaryRepository()
+        self.dict_service = DictionaryService(dict_repo=repo)
 
     def get_queryset(self):
         return self.dict_service.get_all_material_categories()
@@ -194,7 +209,8 @@ class MedicineCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.dict_service = DictionaryService()
+        repo = DictionaryRepository()
+        self.dict_service = DictionaryService(dict_repo=repo)
 
     def get_queryset(self):
         return self.dict_service.get_all_medicine_categories()
@@ -207,7 +223,8 @@ class ProcedureCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.dict_service = DictionaryService()
+        repo = DictionaryRepository()
+        self.dict_service = DictionaryService(dict_repo=repo)
 
     def get_queryset(self):
         return self.dict_service.get_all_procedure_categories()
@@ -221,7 +238,7 @@ class AppointmentWorkViewSet(viewsets.ModelViewSet):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.appointment_service = AppointmentService()
+        self.appointment_service = AppointmentService(appointment_repo=AppointmentRepository())
 
     def perform_create(self, serializer):
         work = self.appointment_service.create_appointment_work(serializer.validated_data)
@@ -238,7 +255,7 @@ class WorkMaterialViewSet(viewsets.ModelViewSet):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.appointment_service = AppointmentService()
+        self.appointment_service = AppointmentService(appointment_repo=AppointmentRepository())
 
     def perform_create(self, serializer):
         material = self.appointment_service.create_work_material(serializer.validated_data)
@@ -258,7 +275,7 @@ class WorkMedicineViewSet(viewsets.ModelViewSet):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.appointment_service = AppointmentService()
+        self.appointment_service = AppointmentService(appointment_repo=AppointmentRepository())
 
     def perform_create(self, serializer):
         medicine = self.appointment_service.create_work_medicine(serializer.validated_data)
@@ -278,7 +295,7 @@ class WorkProcedureViewSet(viewsets.ModelViewSet):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.appointment_service = AppointmentService()
+        self.appointment_service = AppointmentService(appointment_repo=AppointmentRepository())
 
     def perform_create(self, serializer):
         procedure = self.appointment_service.create_work_procedure(serializer.validated_data)
@@ -297,7 +314,10 @@ class ReportViewSet(viewsets.ViewSet):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.report_service = ReportService()
+        report_repo = FinancialReportRepository()
+        patient_repo = PatientRepository()
+        protocol_repo = ProtocolRepository()
+        self.report_service = ReportService(report_repo=report_repo, patient_repo=patient_repo, protocol_repo=protocol_repo)
 
     @action(detail=False, methods=['get'], url_path='work-financials')
     def work_financials(self, request):

@@ -2,8 +2,10 @@ from ..models import (
     WorkCategory, MaterialCategory, MedicineCategory, 
     ProcedureCategory, Doctor
 )
+from ..services.interfaces import DictionaryRepositoryProtocol
 
-class DictionaryRepository:
+
+class DictionaryRepository(DictionaryRepositoryProtocol):
     """DAL для роботи з довідниками (класифікаціями)"""
 
     @staticmethod

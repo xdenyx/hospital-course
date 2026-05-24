@@ -1,6 +1,8 @@
 from ..models import Appointment, AppointmentWork, WorkMaterial, WorkMedicine, WorkProcedure
+from ..services.interfaces import AppointmentRepositoryProtocol
 
-class AppointmentRepository:
+
+class AppointmentRepository(AppointmentRepositoryProtocol):
     """DAL для роботи з прийомами пацієнтів"""
 
     @staticmethod

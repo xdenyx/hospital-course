@@ -1,6 +1,8 @@
 from ..models import Request
+from ..services.interfaces import RequestRepositoryProtocol
 
-class RequestRepository:
+
+class RequestRepository(RequestRepositoryProtocol):
     """DAL для роботи із заявками на прийом"""
 
     @staticmethod

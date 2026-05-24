@@ -1,6 +1,8 @@
 from ..models import Patient
+from ..services.interfaces import PatientRepositoryProtocol
 
-class PatientRepository:
+
+class PatientRepository(PatientRepositoryProtocol):
     """DAL для роботи з пацієнтами"""
 
     @staticmethod

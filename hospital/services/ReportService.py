@@ -1,12 +1,22 @@
-from hospital.repositories import FinancialReportRepository, ProtocolRepository, PatientRepository
+from hospital.services.interfaces import (
+    FinancialReportRepositoryProtocol,
+    PatientRepositoryProtocol,
+    ProtocolRepositoryProtocol,
+)
+
 
 class ReportService:
     """BLL для генерації фінансових звітів та протоколів"""
 
-    def __init__(self):
-        self.report_repo = FinancialReportRepository()
-        self.protocol_repo = ProtocolRepository()
-        self.patient_repo = PatientRepository()
+    def __init__(
+        self,
+        report_repo: FinancialReportRepositoryProtocol,
+        patient_repo: PatientRepositoryProtocol,
+        protocol_repo: ProtocolRepositoryProtocol,
+    ):
+        self.report_repo = report_repo
+        self.patient_repo = patient_repo
+        self.protocol_repo = protocol_repo
 
     def get_work_category_financials(self):
         """Отримати фінансові дані за категоріями робіт"""

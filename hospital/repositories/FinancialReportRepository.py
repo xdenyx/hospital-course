@@ -1,8 +1,10 @@
 from django.db.models import Sum, F, DecimalField, OuterRef, Subquery
 from django.db.models.functions import Coalesce
 from ..models import WorkCategory
+from ..services.interfaces import FinancialReportRepositoryProtocol
 
-class FinancialReportRepository:
+
+class FinancialReportRepository(FinancialReportRepositoryProtocol):
     """DAL для отримання фінансових звітів"""
 
     @staticmethod

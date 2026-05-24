@@ -1,10 +1,11 @@
-from hospital.repositories import PatientRepository
+from hospital.services.interfaces import PatientRepositoryProtocol
+
 
 class PatientService:
     """BLL для управління пацієнтами"""
 
-    def __init__(self):
-        self.patient_repo = PatientRepository()
+    def __init__(self, patient_repo: PatientRepositoryProtocol):
+        self.patient_repo = patient_repo
 
     def create_patient(self, full_name, date_of_birth, phone_number=None):
         """Створити нового пацієнта"""

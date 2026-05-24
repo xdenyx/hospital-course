@@ -1,9 +1,10 @@
-from ..repositories import PatientRepository
+from hospital.services.interfaces import PatientRepositoryProtocol
+
 
 class ClinicService:
 
-    def __init__(self):
-        self.patient_repo = PatientRepository()
+    def __init__(self, patient_repo: PatientRepositoryProtocol):
+        self.patient_repo = patient_repo
 
     def get_patients_by_work_and_date(self, start_date: str, end_date: str, work_category_id: int):
         """Вибірка: Список пацієнтів, за якими виконувалися роботи за період"""

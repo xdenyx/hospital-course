@@ -1,10 +1,11 @@
-from hospital.repositories import DictionaryRepository
+from hospital.services.interfaces import DictionaryRepositoryProtocol
+
 
 class DictionaryService:
     """BLL для управління довідниками"""
 
-    def __init__(self):
-        self.dict_repo = DictionaryRepository()
+    def __init__(self, dict_repo: DictionaryRepositoryProtocol):
+        self.dict_repo = dict_repo
 
     # ===== Категорії робіт =====
     def get_all_work_categories(self):
