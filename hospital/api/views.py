@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from rest_framework.decorators import api_view, permission_classes
@@ -20,11 +20,12 @@ from .serializers import (
 )
 from hospital.services import ( 
     PatientService, AppointmentService, DictionaryService, 
-    ReportService, ClinicService,
+    ReportService, ClinicService, RequestService,
     )
 from hospital.repositories import (
     PatientRepository,
     AppointmentRepository,
+    RequestRepository,
     DictionaryRepository,
     FinancialReportRepository,
     ProtocolRepository,
@@ -44,8 +45,25 @@ class PatientViewSet(viewsets.ModelViewSet):
         self.clinic_service = ClinicService(patient_repo=repo)
 
     def get_queryset(self):
-        # Запрос делегируется сервису пациентов
         return self.patient_service.get_all_patients()
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        patient = self.get_object()
+        serializer = self.get_serializer(patient, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            updated_patient = self.patient_service.update_patient(patient.id, serializer.validated_data)
+        except ValueError as exc:
+            return Response({'error': str(exc)}, status=status.HTTP_409_CONFLICT)
+
+        output_serializer = self.get_serializer(updated_patient)
+        return Response(output_serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
     
     @action(detail=False, methods=['get'], url_path='by-work')
     def by_work(self, request):
@@ -99,8 +117,37 @@ class RequestViewSet(viewsets.ModelViewSet):
     serializer_class = RequestSerializer
     permission_classes = [IsAuthenticated]
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.request_service = RequestService(request_repo=RequestRepository())
+
     def get_queryset(self):
-        return Request.objects.all()
+        return self.request_service.get_all_requests()
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        created_request = self.request_service.create_request(serializer.validated_data)
+        output_serializer = self.get_serializer(created_request)
+        return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        request_obj = self.get_object()
+        serializer = self.get_serializer(request_obj, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            updated_request = self.request_service.update_request(request_obj.id, serializer.validated_data)
+        except ValueError as exc:
+            return Response({'error': str(exc)}, status=status.HTTP_409_CONFLICT)
+
+        output_serializer = self.get_serializer(updated_request)
+        return Response(output_serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
 
 
 class AppointmentViewSet(viewsets.ModelViewSet):
@@ -151,9 +198,11 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     def update(self, request, pk=None, *args, **kwargs):
         try:
             notes = request.data.get('notes', '')
+            version = request.data.get('version')
             appointment = self.appointment_service.update_appointment(
                 appointment_id=int(pk), 
-                notes=notes
+                notes=notes,
+                version=version,
             )
             
             if not appointment:
@@ -240,6 +289,11 @@ class AppointmentWorkViewSet(viewsets.ModelViewSet):
         super().__init__(**kwargs)
         self.appointment_service = AppointmentService(appointment_repo=AppointmentRepository())
 
+    def get_permissions(self):
+        if self.request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
+            return [IsAuthenticated(), IsAdminUser()]
+        return [IsAuthenticated()]
+
     def perform_create(self, serializer):
         work = self.appointment_service.create_appointment_work(serializer.validated_data)
         serializer.instance = work
@@ -256,6 +310,11 @@ class WorkMaterialViewSet(viewsets.ModelViewSet):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.appointment_service = AppointmentService(appointment_repo=AppointmentRepository())
+
+    def get_permissions(self):
+        if self.request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
+            return [IsAuthenticated(), IsAdminUser()]
+        return [IsAuthenticated()]
 
     def perform_create(self, serializer):
         material = self.appointment_service.create_work_material(serializer.validated_data)
@@ -277,6 +336,11 @@ class WorkMedicineViewSet(viewsets.ModelViewSet):
         super().__init__(**kwargs)
         self.appointment_service = AppointmentService(appointment_repo=AppointmentRepository())
 
+    def get_permissions(self):
+        if self.request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
+            return [IsAuthenticated(), IsAdminUser()]
+        return [IsAuthenticated()]
+
     def perform_create(self, serializer):
         medicine = self.appointment_service.create_work_medicine(serializer.validated_data)
         serializer.instance = medicine
@@ -296,6 +360,11 @@ class WorkProcedureViewSet(viewsets.ModelViewSet):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.appointment_service = AppointmentService(appointment_repo=AppointmentRepository())
+
+    def get_permissions(self):
+        if self.request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
+            return [IsAuthenticated(), IsAdminUser()]
+        return [IsAuthenticated()]
 
     def perform_create(self, serializer):
         procedure = self.appointment_service.create_work_procedure(serializer.validated_data)

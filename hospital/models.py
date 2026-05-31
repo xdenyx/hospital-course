@@ -86,6 +86,7 @@ class Patient(models.Model):
         null=True,
         verbose_name="Номер телефону"
     )
+    version = models.PositiveIntegerField(default=1, verbose_name="Версія запису")
     def __str__(self):
         return self.full_name
     
@@ -111,6 +112,7 @@ class Request(models.Model):
     datetime = models.DateTimeField(verbose_name="Дата та час заявки")
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, verbose_name="Пацієнт")
     doctor = models.ForeignKey(Doctor, on_delete=models.SET_NULL, null=True, verbose_name="Лікар")
+    version = models.PositiveIntegerField(default=1, verbose_name="Версія запису")
     
     def __str__(self):
         return f"Заявка №{self.id}"
@@ -123,6 +125,7 @@ class Request(models.Model):
 class Appointment(models.Model):
     request = models.OneToOneField(Request, on_delete=models.CASCADE, verbose_name="Заявка")
     notes = models.TextField(blank=True, verbose_name="Примітки")
+    version = models.PositiveIntegerField(default=1, verbose_name="Версія запису")
     
     def __str__(self):
         return f"Прийом №{self.id} (Пацієнт: {self.request.patient.full_name})"
@@ -138,6 +141,7 @@ class AppointmentWork(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ціна роботи (фіксація доходу)", default=0)
     cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Загальні витрати", default=0)
     profit = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Прибуток", default=0)
+    version = models.PositiveIntegerField(default=1, verbose_name="Версія запису")
     
     def __str__(self):
         return f"{self.work_category.name} (Прийом №{self.appointment.id})"
@@ -155,6 +159,7 @@ class WorkMaterial(models.Model):
     category = models.ForeignKey(MaterialCategory, on_delete=models.PROTECT, verbose_name="Категорія матеріалу")
     quantity = models.DecimalField(max_digits=8, decimal_places=2, verbose_name="Кількість")
     cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Витрати на матеріал")
+    version = models.PositiveIntegerField(default=1, verbose_name="Версія запису")
     
     def __str__(self):
         return f"{self.category.name}"
@@ -168,6 +173,7 @@ class WorkMedicine(models.Model):
     category = models.ForeignKey(MedicineCategory, on_delete=models.PROTECT, verbose_name="Категорія ліків")
     quantity = models.DecimalField(max_digits=8, decimal_places=2, verbose_name="Кількість")
     cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Витрати на ліки")
+    version = models.PositiveIntegerField(default=1, verbose_name="Версія запису")
     
     def __str__(self):
         return f"{self.category.name}"
@@ -180,6 +186,7 @@ class WorkProcedure(models.Model):
     appointment_work = models.ForeignKey(AppointmentWork, related_name='procedures', on_delete=models.CASCADE, verbose_name="Робота в прийомі")
     category = models.ForeignKey(ProcedureCategory, on_delete=models.PROTECT, verbose_name="Категорія процедури")
     cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Витрати на процедуру")
+    version = models.PositiveIntegerField(default=1, verbose_name="Версія запису")
     
     def __str__(self):
         return f"{self.category.name}"

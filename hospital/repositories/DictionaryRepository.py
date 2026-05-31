@@ -47,3 +47,48 @@ class DictionaryRepository(DictionaryRepositoryProtocol):
     @staticmethod
     def create_doctor(full_name, specialization):
         return Doctor.objects.create(full_name=full_name, specialization=specialization)
+
+    @staticmethod
+    def update_work_category(category_id: int, **kwargs):
+        cat = WorkCategory.objects.get(id=category_id)
+        for k, v in kwargs.items():
+            if hasattr(cat, k):
+                setattr(cat, k, v)
+        cat.save()
+        return cat
+
+    @staticmethod
+    def update_material_category(category_id: int, **kwargs):
+        cat = MaterialCategory.objects.get(id=category_id)
+        for k, v in kwargs.items():
+            if hasattr(cat, k):
+                setattr(cat, k, v)
+        cat.save()
+        return cat
+
+    @staticmethod
+    def update_medicine_category(category_id: int, **kwargs):
+        cat = MedicineCategory.objects.get(id=category_id)
+        for k, v in kwargs.items():
+            if hasattr(cat, k):
+                setattr(cat, k, v)
+        cat.save()
+        return cat
+
+    @staticmethod
+    def update_procedure_category(category_id: int, **kwargs):
+        cat = ProcedureCategory.objects.get(id=category_id)
+        for k, v in kwargs.items():
+            if hasattr(cat, k):
+                setattr(cat, k, v)
+        cat.save()
+        return cat
+
+    @staticmethod
+    def update_doctor(doctor_id: int, **kwargs):
+        doc = Doctor.objects.get(id=doctor_id)
+        for k, v in kwargs.items():
+            if hasattr(doc, k):
+                setattr(doc, k, v)
+        doc.save()
+        return doc

@@ -16,7 +16,7 @@ class PatientSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Patient
-        fields = ['id', 'full_name', 'date_of_birth', 'age', 'phone_number']
+        fields = ['id', 'full_name', 'date_of_birth', 'age', 'phone_number', 'version']
 
 
 class RequestSerializer(serializers.ModelSerializer):
@@ -27,7 +27,7 @@ class RequestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Request
-        fields = ['id', 'patient', 'patient_id', 'datetime', 'doctor', 'doctor_id']
+        fields = ['id', 'patient', 'patient_id', 'datetime', 'doctor', 'doctor_id', 'version']
 
 class WorkCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -92,7 +92,7 @@ class AppointmentWorkSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentWork
         fields = [
-            'id', 'appointment', 'work_category', 'category_name', 'price', 'cost', 'profit', 'materials', 'medicines', 'procedures'
+            'id', 'appointment', 'work_category', 'category_name', 'price', 'cost', 'profit', 'version', 'materials', 'medicines', 'procedures'
         ]
 
 
@@ -102,7 +102,7 @@ class AppointmentDetailSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Appointment
-        fields = ['id', 'request', 'works', 'notes']
+        fields = ['id', 'request', 'works', 'notes', 'version']
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
@@ -111,4 +111,4 @@ class AppointmentSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Appointment
-        fields = ['id', 'request', 'request_id', 'notes']
+        fields = ['id', 'request', 'request_id', 'notes', 'version']

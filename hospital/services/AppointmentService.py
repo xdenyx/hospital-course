@@ -8,8 +8,11 @@ class AppointmentService:
     def __init__(self, appointment_repo: AppointmentRepositoryProtocol):
         self.appointment_repo = appointment_repo
 
-    def process_appointment(self, request_id, notes, works_data):
-        """Обробити прийом та заповнити дані про роботи, матеріали, ліки, процедури"""
+    def process_appointment(self, request_id, notes, works_data: list[dict]):
+        """Обробити прийом та заповнити дані про роботи, матеріали, ліки, процедури.
+
+        works_data приходить як serializer.validated_data['works'].
+        """
         with transaction.atomic():
             appointment = self.appointment_repo.create_appointment(request_id, notes)
 
@@ -42,7 +45,7 @@ class AppointmentService:
 
             return appointment
 
-    def create_appointment_work(self, validated_data):
+    def create_appointment_work(self, validated_data: dict):
         appointment = validated_data.get('appointment')
         appointment_id = appointment.id if appointment is not None else validated_data['appointment_id']
 
@@ -57,12 +60,15 @@ class AppointmentService:
             appointment_id=appointment_id,
             work_category_id=work_category_id,
             price=price,
-            cost=0,
             profit=price or 0,
         )
         return self.recalculate_work_finances(work)
 
-    def update_appointment_work(self, work, validated_data):
+    def update_appointment_work(self, work, validated_data: dict):
+        expected_version = validated_data.get('version')
+        if expected_version is not None and expected_version != work.version:
+            raise ValueError('Версія запису застаріла. Оновіть дані та повторіть спробу.')
+
         work_category = validated_data.get('work_category')
         if work_category is not None:
             work.work_category = work_category
@@ -77,10 +83,11 @@ class AppointmentService:
         if 'profit' in validated_data:
             work.profit = validated_data['profit']
 
-        work.save()
+        work.version += 1
+        work = self.appointment_repo.save_work(work)
         return self.recalculate_work_finances(work)
 
-    def create_work_material(self, validated_data):
+    def create_work_material(self, validated_data: dict):
         appointment_work = validated_data.get('appointment_work')
         appointment_work_id = appointment_work.id if appointment_work is not None else validated_data['appointment_work_id']
         category = validated_data.get('category')
@@ -95,12 +102,17 @@ class AppointmentService:
         self.recalculate_work_finances(material.appointment_work)
         return material
 
-    def update_work_material(self, material, validated_data):
+    def update_work_material(self, material, validated_data: dict):
+        expected_version = validated_data.get('version')
+        if expected_version is not None and expected_version != material.version:
+            raise ValueError('Версія запису застаріла. Оновіть дані та повторіть спробу.')
+
         if 'category' in validated_data:
             material.category = validated_data['category']
         if 'quantity' in validated_data:
             material.quantity = validated_data['quantity']
-        material.save()
+        material.version += 1
+        material = self.appointment_repo.save_material(material)
         self.recalculate_work_finances(material.appointment_work)
         return material
 
@@ -109,7 +121,7 @@ class AppointmentService:
         material.delete()
         return self.recalculate_work_finances(appointment_work)
 
-    def create_work_medicine(self, validated_data):
+    def create_work_medicine(self, validated_data: dict):
         appointment_work = validated_data.get('appointment_work')
         appointment_work_id = appointment_work.id if appointment_work is not None else validated_data['appointment_work_id']
         category = validated_data.get('category')
@@ -124,12 +136,17 @@ class AppointmentService:
         self.recalculate_work_finances(medicine.appointment_work)
         return medicine
 
-    def update_work_medicine(self, medicine, validated_data):
+    def update_work_medicine(self, medicine, validated_data: dict):
+        expected_version = validated_data.get('version')
+        if expected_version is not None and expected_version != medicine.version:
+            raise ValueError('Версія запису застаріла. Оновіть дані та повторіть спробу.')
+
         if 'category' in validated_data:
             medicine.category = validated_data['category']
         if 'quantity' in validated_data:
             medicine.quantity = validated_data['quantity']
-        medicine.save()
+        medicine.version += 1
+        medicine = self.appointment_repo.save_medicine(medicine)
         self.recalculate_work_finances(medicine.appointment_work)
         return medicine
 
@@ -138,7 +155,7 @@ class AppointmentService:
         medicine.delete()
         return self.recalculate_work_finances(appointment_work)
 
-    def create_work_procedure(self, validated_data):
+    def create_work_procedure(self, validated_data: dict):
         appointment_work = validated_data.get('appointment_work')
         appointment_work_id = appointment_work.id if appointment_work is not None else validated_data['appointment_work_id']
         category = validated_data.get('category')
@@ -152,10 +169,15 @@ class AppointmentService:
         self.recalculate_work_finances(procedure.appointment_work)
         return procedure
 
-    def update_work_procedure(self, procedure, validated_data):
+    def update_work_procedure(self, procedure, validated_data: dict):
+        expected_version = validated_data.get('version')
+        if expected_version is not None and expected_version != procedure.version:
+            raise ValueError('Версія запису застаріла. Оновіть дані та повторіть спробу.')
+
         if 'category' in validated_data:
             procedure.category = validated_data['category']
-        procedure.save()
+        procedure.version += 1
+        procedure = self.appointment_repo.save_procedure(procedure)
         self.recalculate_work_finances(procedure.appointment_work)
         return procedure
 
@@ -164,8 +186,7 @@ class AppointmentService:
         procedure.delete()
         return self.recalculate_work_finances(appointment_work)
 
-    @staticmethod
-    def recalculate_work_finances(appointment_work):
+    def recalculate_work_finances(self, appointment_work):
         # автоматично витягує базову вартість з cost_price
         # 1. Рахуємо та оновлюємо кожен витрачений матеріал
         materials_cost = 0
@@ -173,7 +194,7 @@ class AppointmentService:
             if m.category:
                 base_cost = getattr(m.category, 'cost_price', 0)
                 m.cost = base_cost * (m.quantity or 1)
-                m.save()
+                self.appointment_repo.save_material(m)
                 materials_cost += m.cost
 
         # 2. Рахуємо та оновлюємо кожні ліки
@@ -182,7 +203,7 @@ class AppointmentService:
             if med.category:
                 base_cost = getattr(med.category, 'cost_price', 0)
                 med.cost = base_cost * (med.quantity or 1)
-                med.save()
+                self.appointment_repo.save_medicine(med)
                 medicines_cost += med.cost
 
         # 3. Рахуємо супутні процедури
@@ -191,13 +212,13 @@ class AppointmentService:
             if p.category:
                 base_cost = getattr(p.category, 'cost_price', 0)
                 p.cost = base_cost
-                p.save()
+                self.appointment_repo.save_procedure(p)
                 procedures_cost += p.cost
 
         # 4. Оновлюємо фінанси самої роботи (AppointmentWork)
         appointment_work.cost = materials_cost + medicines_cost + procedures_cost
         appointment_work.profit = (appointment_work.price or 0) - appointment_work.cost
-        appointment_work.save()
+        self.appointment_repo.save_work(appointment_work)
 
         return appointment_work
 
@@ -205,6 +226,12 @@ class AppointmentService:
         """Отримати прийом за ID"""
         return self.appointment_repo.get_by_id(appointment_id)
 
-    def update_appointment(self, appointment_id, notes):
+    def update_appointment(self, appointment_id, notes, version=None):
         """Оновити примітки прийому"""
-        return self.appointment_repo.update_appointment(appointment_id, notes)
+        appointment = self.appointment_repo.get_by_id(appointment_id)
+        if version is not None and version != appointment.version:
+            raise ValueError('Версія запису застаріла. Оновіть дані та повторіть спробу.')
+
+        appointment.notes = notes
+        appointment.version += 1
+        return self.appointment_repo.save_appointment(appointment)

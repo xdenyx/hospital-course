@@ -39,6 +39,11 @@ class AppointmentRepository(AppointmentRepositoryProtocol):
         return appointment
 
     @staticmethod
+    def save_appointment(appointment):
+        appointment.save()
+        return appointment
+
+    @staticmethod
     def add_work(appointment_id, work_category_id, price=None, cost=0, profit=0):
         payload = {
             'appointment_id': appointment_id,
@@ -51,6 +56,11 @@ class AppointmentRepository(AppointmentRepositoryProtocol):
         return AppointmentWork.objects.create(**payload)
 
     @staticmethod
+    def save_work(work):
+        work.save()
+        return work
+
+    @staticmethod
     def add_material(appointment_work_id, material_category_id, quantity, cost):
         return WorkMaterial.objects.create(
             appointment_work_id=appointment_work_id,
@@ -58,6 +68,11 @@ class AppointmentRepository(AppointmentRepositoryProtocol):
             quantity=quantity,
             cost=cost
         )
+
+    @staticmethod
+    def save_material(material):
+        material.save()
+        return material
 
     @staticmethod
     def add_medicine(appointment_work_id, medicine_category_id, quantity, cost):
@@ -69,9 +84,19 @@ class AppointmentRepository(AppointmentRepositoryProtocol):
         )
 
     @staticmethod
+    def save_medicine(medicine):
+        medicine.save()
+        return medicine
+
+    @staticmethod
     def add_procedure(appointment_work_id, procedure_category_id, cost):
         return WorkProcedure.objects.create(
             appointment_work_id=appointment_work_id,
             category_id=procedure_category_id,
             cost=cost
         )
+
+    @staticmethod
+    def save_procedure(procedure):
+        procedure.save()
+        return procedure
